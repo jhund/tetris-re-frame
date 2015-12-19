@@ -1,6 +1,6 @@
-# tetris
+# Tetris
 
-The tetris game implemented using the [re-frame](https://github.com/Day8/re-frame) application pattern.
+The browser based Tetris game implemented in ClojureScript using the [re-frame](https://github.com/Day8/re-frame) application pattern.
 
 
 ## Development Mode
@@ -43,6 +43,7 @@ Stored in `db`
 
 ## Game coordinate system
 
+~~~
 0 - - - - - - 10 (:game :width)
 |              |
 |    x-+       |
@@ -53,3 +54,4 @@ Stored in `db`
 |              |
 20 - - - - - - +
 (:game :height)
+~~~
