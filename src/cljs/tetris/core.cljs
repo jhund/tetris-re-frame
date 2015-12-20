@@ -12,9 +12,11 @@
                           js/document
                           "keydown"
                           (fn [e]
-                            (do
-                              (.preventDefault e)
-                              (dispatch [:keydown (-> e .-keyCode)])))))
+                            (let [key-code (.-keyCode e)]
+                              (when (some #{key-code} (keys game/get-action-for-keycode))
+                                (do
+                                  (.preventDefault e)
+                                  (dispatch [:keydown key-code])))))))
 
 (defn mount-root []
   (reagent/render [views/main-panel]
