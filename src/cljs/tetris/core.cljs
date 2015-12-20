@@ -11,7 +11,10 @@
 (defonce observe-keydown (.addEventListener
                           js/document
                           "keydown"
-                          #(dispatch [:keydown (-> % .-keyCode)])))
+                          (fn [e]
+                            (do
+                              (.preventDefault e)
+                              (dispatch [:keydown (-> e .-keyCode)])))))
 
 (defn mount-root []
   (reagent/render [views/main-panel]

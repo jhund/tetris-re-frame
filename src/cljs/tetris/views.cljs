@@ -4,17 +4,20 @@
             [tetris.game :as game]
             [clojure.string :as string]))
 
-(defn cell [x y color-idx]
-  [:rect {:x x
-          :y y
-          :width 1
+(defn cell
+  "Renders SVG for a single square (part of a block)."
+  [x y color-idx]
+  [:rect {:fill (game/colors color-idx)
           :height 1
+          :rx 0.2
           :stroke "black"
           :stroke-width 0.01
-          :rx 0.1
-          :fill (game/colors color-idx)}])
+          :width 1
+          :x x
+          :y y}])
 
 (defn board
+  "Renders SVG for the game board."
   []
   (let [active-block (subscribe [:active-block])
         done (subscribe [:done])
@@ -28,8 +31,8 @@
     (fn render-board
       []
       [:svg {:style {:border "1px solid black"
-                     :width 200 ; TODO parameterize
-                     :height 400} ; TODO parameterize
+                     :width (* game/board-width game/cell-size)
+                     :height (* game/board-height game/cell-size)}
              :view-box (string/join " " [0 0 game/board-width game/board-height])}
         (when-not @done
           (into [:g {:name "active-block"}]
@@ -45,6 +48,7 @@
                 [cell i j color-idx]))])))
 
 (defn main-panel
+  "Renders HTML for the entire game with title, game board, score and restart button."
   []
   (let [done (subscribe [:done])
         score (subscribe [:score])]

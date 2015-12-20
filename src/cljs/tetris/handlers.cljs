@@ -22,8 +22,8 @@
   (path [:game])
   (fn [game-attrs [_ key-code]]
     (if-not (:done game-attrs)
-      (if-let [f (game/action (game/codename key-code))]
-        (game/maybe-step game-attrs f)
+      (if-let [f (game/get-action-for-keycode key-code)]
+        (game/try-step game-attrs f)
         game-attrs)
       game-attrs)))
 

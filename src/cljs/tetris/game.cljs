@@ -18,23 +18,17 @@
     [0 1 0]]])
 
 (def colors
-  ["#181818"
-   "#585858"
-   "#D8D8D8"
-   "#AB4642"
-   "#DC9656"
-   "#F7CA88"
-   "#A1B56C"
-   "#86C1B9"
-   "#7CAFC2"
-   "#BA8BAF"
-   "#A16946"])
+  ["#00FFFF"
+   "#AA00FF"
+   "#FFA500"
+   "#0000FF"
+   "#FF0000"
+   "#00FF00"
+   "#FFFF00"])
 
-(def board-width 10)
-(def board-height 20)
-
-(defn init-landed-blocks [width height]
-  (vec (repeat width (vec (repeat height -1)))))
+(def board-width 10) ; # of cells
+(def board-height 20) ; # of cells
+(def cell-size 20) ; in pixels
 
 (defn transpose [matrix]
   (apply mapv vector matrix))
@@ -42,10 +36,17 @@
 (defn flip [matrix]
   (vec (reverse matrix)))
 
+(defn init-landed-blocks
+  "Creates empty container for landed blocks (covers entire board)"
+  [width height]
+  (vec (repeat width (vec (repeat height -1)))))
+
 (defn get-rand-block-shape []
   (transpose (rand-nth block-shapes)))
 
-(defn start-new-block [game-attrs]
+(defn start-new-block
+  "Resets game-attrs to start a new active block."
+  [game-attrs]
   (let [shape (get-rand-block-shape)]
     (assoc-in game-attrs
               [:active-block]
@@ -55,13 +56,14 @@
                :shape shape})))
 
 (defn new-game
+  "Returns game-attrs for a new game."
   []
   (start-new-block
     {:done false
      :landed-blocks (init-landed-blocks board-width board-height)
      :score 0}))
 
-(defn valid-game? [{:keys [done landed-blocks] {:keys [x y shape]} :active-block}]
+(defn no-collisions? [{:keys [done landed-blocks] {:keys [x y shape]} :active-block}]
   (every? #{-1}
           (for [i (range (count shape))
                 j (range (count (first shape)))
@@ -85,7 +87,8 @@
 (defn set-cell-in-landed-blocks [landed-blocks [x y color]]
   (assoc-in landed-blocks [x y] color))
 
-(defn add-to-landed-blocks
+(defn move-to-landed-blocks
+  "Moves the active-block to landed-blocks."
   [{:as game-attrs
     :keys [done landed-blocks] {:keys [x y shape color-idx]} :active-block}]
   (let [shape-width (count shape)
@@ -98,13 +101,13 @@
                      [(+ x i) (+ y j) color-idx])))))
 
 (defn check-if-game-over [game]
-  (if (valid-game? game)
+  (if (no-collisions? game)
     game
     (assoc game :done true)))
 
-(defn landed [game]
+(defn land-active-block [game]
   (-> game
-      add-to-landed-blocks
+      move-to-landed-blocks
       clear-completed-rows
       start-new-block
       check-if-game-over))
@@ -119,33 +122,28 @@
   (update-in game [:active-block :x] inc))
 
 (defn rotate [game]
-  (update-in game [:active-block :shape] (comp transpose flip)))
+  (update-in game
+             [:active-block :shape]
+             (comp transpose flip))) ; transpose and flip is equivalent to ccw rotation
 
 (defn drop-to-ground [game]
-  (landed (last (take-while valid-game? (iterate move-down game)))))
+  (land-active-block (last (take-while no-collisions? (iterate move-down game)))))
 
-(def codename
-  { 37 "LEFT"
-    38 "UP"
-    39 "RIGHT"
-    40 "DOWN"
-    32 "SPACE"})
-
-(def action
-  { "LEFT" move-left
-    "RIGHT" move-right
-    "UP" rotate
-    "SPACE" rotate
-    "DOWN" drop-to-ground})
+(def get-action-for-keycode
+  { 37 move-left ; left arrow
+    39 move-right ; right arrow
+    38 rotate ; up arrow
+    32 rotate ; space
+    40 drop-to-ground}) ; down arrow
 
 (defn apply-gravity [game-attrs]
   (let [new-game (move-down game-attrs)]
-    (if (valid-game? new-game)
+    (if (no-collisions? new-game)
       new-game
-      (landed game-attrs))))
+      (land-active-block game-attrs))))
 
-(defn maybe-step [game-attrs f]
+(defn try-step [game-attrs f]
   (let [new-game (f game-attrs)]
-    (if (valid-game? new-game)
+    (if (no-collisions? new-game)
         new-game
         game-attrs)))
